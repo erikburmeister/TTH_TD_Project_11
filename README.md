@@ -19,6 +19,7 @@ We need make the following:
 User login info
 
 User: test_user
+/
 password: password
 
 Feel free to create new users in the `admin/` page. 
@@ -27,12 +28,17 @@ Users > ADD USER+ (on the upper-right side of the screen)
 
 -----------------------------------------
 
+Check the coverage image in 'Coverage_image' folder
+for quick look at the result.
+
+-----------------------------------------
+
 Check test coverage
 
 * coverage run --source='.' manage.py test pugorugh
 * coverage report
 
-TOTAL = 68%
+TOTAL = 80%
 
 -----------------------------------------
 

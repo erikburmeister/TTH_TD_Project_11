@@ -6,11 +6,10 @@ from rest_framework.test import APIClient
 from rest_framework.test import APIRequestFactory
 from rest_framework.test import force_authenticate
 
-from rest_framework import status
-
 from . import models
 from . import views
 from . import serializers
+from .views import preferred_dog_age
 
 # Create your tests here.
 class ViewsTest(TestCase):
@@ -42,72 +41,61 @@ class ViewsTest(TestCase):
         self.test_user_dog = models.UserDog.objects.create(
             user=self.test_user,
             dog=self.test_dog,
-            status='l'
+            status='u'
         )
 
-    def test_register_user(self):
-        factory = APIRequestFactory()
-        factory.post(reverse('register-user'),
-                     {'username': 'test_user',
-                      'password': 'password'})
-        test_user = User.objects.get(username='test_user')
-        self.assertEqual(User.objects.count(), 1)
-        self.assertTrue(test_user)
+    def test_preferred_dog_age(self):
+        baby = preferred_dog_age('b')
+        young = preferred_dog_age('y')
+        adult = preferred_dog_age('a')
+        senior = preferred_dog_age('s')
+        self.assertEqual(baby, list(range(1,13)))
+        self.assertEqual(young, list(range(13,25)))
+        self.assertEqual(adult, list(range(24,61)))
+        self.assertEqual(senior, list(range(60,121)))
 
-    def test_register_same_user(self):
-        factory = APIRequestFactory()
-        request = factory.post(reverse('register-user'),
-                     {'username': 'test_user',
-                      'password': 'password'})
-        test_user = User.objects.get(username='test_user')
-        view = views.UserRegisterView.as_view()
-        response = view(request)
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(User.objects.count(), 1)
-        self.assertTrue(test_user)
+    def test_register_user(self):
+        self.client.post(reverse('register-user'),
+                     {'username': 'test_user_2',
+                      'password': 'password_2'})
+        test_user_2 = User.objects.get(username='test_user_2')
+        self.assertEqual(User.objects.count(), 2)
+        self.assertTrue(test_user_2)
 
     def test_user_preferences(self):
         factory = APIRequestFactory()
         request = factory.get(reverse('preferences-update'))
         force_authenticate(request, user=self.test_user)
         view = views.UserPreferenceView.as_view()
-        response = view(request)
+        resp = view(request)
         serializer = serializers.UserPrefSerializer(self.test_user_preferences)
-        self.assertEqual(response.data, serializer.data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(resp.data, serializer.data)
+        self.assertEqual(resp.status_code, 200)
 
     def test_user_preferences_update(self):
-        self.assertTrue(self.test_user_preferences.age, 'y')
-        self.client.put(reverse('preferences-update'),
-                        {'user': self.test_user,
-                         'gender': 'm',
+        factory = APIRequestFactory()
+        request = factory.get(reverse('preferences-update'))
+        force_authenticate(request, user=self.test_user)
+        view = views.UserPreferenceView.as_view()
+        resp = view(request)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data, {'gender': 'm',
+                                     'age': 'y',
+                                     'size': 's'})
+        request_2 = factory.put(reverse('preferences-update'),
+                        {'gender': 'f',
                          'age': 's',
-                         'size': 's',})
-        self.assertTrue(self.test_user_preferences.age, 's')
+                         'size': 'l'})
+        force_authenticate(request_2, user=self.test_user)
+        resp_2 = view(request_2)
+        self.assertEqual(resp_2.status_code, 200)
+        self.assertEqual(resp_2.data, {'gender': 'f', 'age': 's', 'size': 'l'})
 
-    def test_dog_undecided(self):
+    def test_dog_update(self):
         factory = APIRequestFactory()
-        user_dog = self.test_user_dog
-        user_dog.status = 'u'
-        user_dog.save()
-        factory.get(reverse(
-            'dogs-next', kwargs={'pk': 1, 'decision': 'undecided'}))
-        self.assertEqual(models.Dog.objects.all().get(pk=1).name, 'Francesca')
-
-    def test_dog_liked(self):
-        factory = APIRequestFactory()
-        user_dog = self.test_user_dog
-        user_dog.status = 'l'
-        user_dog.save()
-        factory.get(reverse(
-            'dogs-next', kwargs={'pk': 1, 'decision': 'liked'}))
-        self.assertEqual(models.Dog.objects.all().get(pk=1).name, 'Francesca')
-
-    def test_dog_disliked(self):
-        factory = APIRequestFactory()
-        user_dog = self.test_user_dog
-        user_dog.status = 'd'
-        user_dog.save()
-        factory.get(reverse(
-            'dogs-next', kwargs={'pk': 1, 'decision': 'disliked'}))
-        self.assertEqual(models.Dog.objects.all().get(pk=1).name, 'Francesca')
+        request = factory.put(reverse('dogs-update',
+                                      kwargs={'pk': 1, 'decision': 'liked'}))
+        force_authenticate(request, user=self.test_user)
+        view = views.ListDogsView.as_view()
+        resp = view(request, pk='1', decision='liked')
+        self.assertEqual(resp.status_code, 200)
