@@ -1,7 +1,7 @@
 # TTH_TD_Project_11
  Pug or Ugh API
 
-In project #10 we are tasked with developing an API using Django REST Framework.
+In project #11 we are tasked with developing an API using Django REST Framework.
 The API built for this project allows a user to look through a variety of dogs 
 available for adoption. The user can sort by their preferences and then move 
 dogs to 3 different categories. "Undecided" which means the user has not made up
