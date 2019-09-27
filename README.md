@@ -8,7 +8,7 @@ dogs to 3 different categories. "Undecided" which means the user has not made up
 their mind about that dog. "Liked" which means the user is interested in those
 dogs. Finally, "Disliked" which means the user is not interested in that dog. 
 
-We need make the following:
+We need to make the following:
 
 * Create Models
 * Build the URLs the front end is expecting
